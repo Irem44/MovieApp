@@ -78,7 +78,6 @@ export default function PersonScreen() {
                         </View>
                 </View>
                 <View className="my-6 mx-4 space-y-2">
-                    <Text className="text-white text-lg">Biography</Text>
                     <Text className="text-neutral-400 tracking-wide">
                     Michael John "Mike" Myers is a British-Canadian actor, comedian, screenwriter and filmmaker. Mike Myers' television career began with his appearance on Saturday Night Live in 1988. Myers, who spent six seasons here, introduced many unforgettable characters to the world of comedy.
 
