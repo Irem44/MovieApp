@@ -11,6 +11,7 @@ import Cast from '../components/cast';
 import MovieList from '../components/movieList'
 import { LinearGradient } from 'expo-linear-gradient';
 import Loading from '../components/loading';
+import { fallbackMoviePoster, fetchMovieCredits, fetchMovieDetails, fetchSimilarMovies, image500 } from '../api/moviedb';
 var {width,height}=Dimensions.get('window');
 const android=Platform.OS=='android';
 const topMargin=android? '':'mt-3';
@@ -19,18 +20,39 @@ export default function MovieScreen(){
   const{params:item}=useRoute();
   const [isFavourite,toggleFavourite]=useState(false);
   const navigation=useNavigation();//geriye dönme aktif
-  const [cast,setCast]=useState([1,2,3,4,5]);
-  const [similarMovies,setSimilarMovies]=useState([1,2,3,4,5]);
+  const [cast,setCast]=useState([]);
+  const [similarMovies,setSimilarMovies]=useState([]);
   const [loading,setLoading]=useState(false);
-
+  const [movie,setMovie]=useState({});
 
   let movieName="Shrek";
 
   useEffect(()=>{
-      //call the movie details api
-  },[item])
+     // console.log('itemid:',item.id);
+      setLoading(true);
+      getMovieDetails(item.id);
+      getMovieCredits(item.id);
+      getSimilarMovies(item.id);
+  },[item]);
+
+  const getMovieDetails= async id=>{
+    const data=await fetchMovieDetails(id);
+   // console.log('got movie details: ',data);
+   if(data) setMovie(data);
+    setLoading(false);
+  }
   
-  
+  const getMovieCredits =async id=>{
+    const data=await fetchMovieCredits(id);
+    //console.log('got credits:',data);
+    if(data && data.cast) setCast(data.cast);
+  }
+
+  const getSimilarMovies =async id=>{
+    const data=await fetchSimilarMovies(id);
+    //console.log('got similar movies:',data);
+    if(data && data.results) setSimilarMovies(data.results);
+  }
 
     
     return(
@@ -55,7 +77,8 @@ export default function MovieScreen(){
                  ):(
                   <View>
                     <Image
-                    source={require('../assets/shrek.jpeg')}
+                    //source={require('../assets/shrek.jpeg')}
+                    source={{uri: image500(movie?.poster_path) || fallbackMoviePoster}}
                     style={{width,height:height*0.55}}
                     />
                     <LinearGradient
@@ -77,29 +100,45 @@ export default function MovieScreen(){
           {/*title */}
           <Text className="text-white text-center text-3xl font-bold tracking-wider">
           {
-            movieName
+             movie?.title
           }
           </Text>
           {/*status,relese,runtime*/}
-          <Text className="text-neutral-400 font-semibold text-base text-center">
-            Released . 2020 .170 min
-          </Text>
+          {
+            movie?.id?(
+              <Text className="text-neutral-400 font-semibold text-base text-center">
+              {movie?.status}.{movie?.release_date?.split('-')[0]}.{movie?.runtime} min
+              </Text>
+            ):null
+          }
+          
 
           {/*genres*/ }
           <View className="flex-row justify-center mx-4 space-x-2">
-                  <Text className="text-neutral-400 font-semibold text-base text-center">
-                    Animation.
-                  </Text>
-                  <Text className="text-neutral-400 font-semibold text-base text-center">
+              {
+                  movie?.genres?.map((genre,index)=>{
+                     let showDot=index+1 !=movie.genres.length;
+                      return(
+                        <Text key={index} className="text-neutral-400 font-semibold text-base text-center">
+                           {genre?.name} {showDot? ".":null}
+                        </Text>
+                      )
+                  })
+
+              }
+                  
+                  {/* <Text className="text-neutral-400 font-semibold text-base text-center">
                     Thrill.
                   </Text>
                   <Text className="text-neutral-400 font-semibold text-base text-center">
                     Comedy
-                  </Text>
+                  </Text> */}
           </View>
           {/*description*/}
           <Text className="text-neutral-400 mx-4 tracking-wide">
-          Shrek is a humorous animated film that turns fairy tale conventions upside down, following the adventures of an ogre named Shrek. Through its witty humor and unconventional characters, it delivers a message of acceptance and friendship.
+              {
+                movie?.overview
+              }
           </Text>
 
          </View>
