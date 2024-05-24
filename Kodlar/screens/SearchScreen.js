@@ -1,25 +1,46 @@
 import {View,Text, Dimensions, TextInput, TouchableOpacity, ScrollView, TouchableWithoutFeedback,Image} from 'react-native'
-import React ,{useState} from 'react'
+import React ,{useState,useCallback} from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { XMarkIcon } from 'react-native-heroicons/outline';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation} from '@react-navigation/native';
 import Loading from '../components/loading';
-
-const {width,heigth}=Dimensions.get('window');
+import {debounce} from  'lodash';
+import { fallbackMoviePoster, image185, searchMovies } from '../api/moviedb';
+const {width,height}=Dimensions.get('window');
 
 export default function SearchScreen(){
 
     const navigation=useNavigation();
     const [results,setResults]=useState([1,2,3,4]);
     const [loading, setLoading] = useState(false);
-
     let movieName="Shrek";
+    const handleSearch = value=>{
+        if(value && value.length>2){
+            setLoading(true);
+            searchMovies({
+                query:value,
+                include_adult:'false',
+                language:'en-US',
+                page:'1'
+
+            }).then(data=>{
+                 setLoading(false);
+                //  console.log('got Movies: ',data);
+               if(data && data.results) setResults(data.results);
+            })
+        }else{
+             setLoading(false);
+             setResults([])
+        }
+       }
+    const handleTextDebounce=useCallback(debounce(handleSearch,400),[]);
     return(
         <SafeAreaView className="bg-neutral-800 flex-1">
             <View
             className="mx-4 mb-3  flex-row justify-between items-center border border-neutral-500 rounded-full">
             
             <TextInput
+                onChangeText={handleTextDebounce}
                 placeholder='Search Movie'
                 placeholderTextColor={'lightgray'}
                 className="pb-1 pl-6 flex-1 text-base font-semibold text-white tracking-wider"
@@ -62,13 +83,13 @@ export default function SearchScreen(){
 
                                     <View className="space-y-2 mb-4">
                                         <Image className="rounded-3xl"
-                                        source={require('../assets/shrek.jpeg')}
-                                        style={{width:width*0.44,heigth:heigth*0.3}}
+                                        // source={require('../assets/shrek.jpeg')}
+                                        source={{uri:image185(item?.poster_path) || fallbackMoviePoster}}
+                                        style={{width:width*0.44,height:height*0.3}}
                                             />
                                             <Text className="text-neutral-300 ml-1">
-                                            {
-                                                movieName.length>22? movieName.slice(0.22)+'...':movieName
-                                            }
+                                            {item?.title ? (item.title.length > 22 ? item.title.slice(0, 22) + '...' : item.title) : ' '}
+
                                             </Text>
                                     </View>
                                     
